@@ -40,7 +40,16 @@ BAD_WORDS = [
     "am",
 ]
 
-pattern = r"\b(" + "|".join(BAD_WORDS) + r")\b"
+def make_flexible_pattern(word):
+    """Har bir harf bir yoki ko'p marta takrorlanishi mumkin: p -> p+"""
+    return "".join(f"{re.escape(c)}+" for c in word)
+
+# Har bir so'z uchun flexible pattern yasash
+flexible_patterns = [make_flexible_pattern(w) for w in BAD_WORDS]
+pattern = re.compile(
+    r"(" + "|".join(flexible_patterns) + r")",
+    re.IGNORECASE
+)
 
 
 # ── Keep-alive server ────────────────────────────────────────────────────────
@@ -117,7 +126,7 @@ async def anti_mat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = update.message.text
 
-    if re.search(pattern, text, re.IGNORECASE):
+    if pattern.search(text):
         user = update.message.from_user
         if user.username:
             name = f"@{user.username}"
@@ -133,7 +142,6 @@ async def anti_mat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             warning = await update.message.chat.send_message(
                 f"⚠️ {name}, iltimos so'kinmang! Guruh qoidalariga rioya qiling. 🙏"
             )
-            # 10 daqiqada ogohlantirish xabarini o'chirish
             asyncio.create_task(delete_after(warning, 10 * 60))
         except Exception:
             pass
