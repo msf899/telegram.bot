@@ -17,9 +17,23 @@ TOKEN = os.getenv("TOKEN")
 
 BAD_WORDS = [
     "jala",
+    "jalla",
+    "jallab",
+    "jalab",
+    "sikaman",
+    "siktim",
+    "sikey",
+    "siki",
+    "aminga qotogim",
+    "popish",
+    "xuyela",
+    "pidr",
     "gandon",
     "pidaraz",
     "qoto",
+    "qotoq",
+    "yiban",
+    "oneni ami",
     "am",
 ]
 
