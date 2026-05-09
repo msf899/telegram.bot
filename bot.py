@@ -1,5 +1,6 @@
 import os
 import re
+import asyncio
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -58,6 +59,15 @@ def run_keep_alive():
     server.serve_forever()
 
 
+# ── Xabarni N sekunddan keyin o'chirish ─────────────────────────────────────
+async def delete_after(message, seconds: int):
+    await asyncio.sleep(seconds)
+    try:
+        await message.delete()
+    except Exception:
+        pass
+
+
 # ── /start — faqat private chatda ───────────────────────────────────────────
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
@@ -90,7 +100,6 @@ async def bot_added_to_group(update: Update, context: ContextTypes.DEFAULT_TYPE)
     old_status = result.old_chat_member.status
     new_status = result.new_chat_member.status
 
-    # Bot guruhga qo'shildi
     if old_status in ["left", "kicked"] and new_status in ["member", "administrator"]:
         await result.chat.send_message(
             "👋 Salom! Men so'kinishlarni nazorat qiluvchi botman.\n\n"
@@ -119,9 +128,11 @@ async def anti_mat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass
 
         try:
-            await update.message.chat.send_message(
+            warning = await update.message.chat.send_message(
                 f"⚠️ {name}, iltimos so'kinmang! Guruh qoidalariga rioya qiling. 🙏"
             )
+            # 10 daqiqada ogohlantirish xabarini o'chirish
+            asyncio.create_task(delete_after(warning, 10 * 60))
         except Exception:
             pass
 
