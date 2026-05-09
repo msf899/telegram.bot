@@ -24,7 +24,7 @@ BAD_WORDS = [
     "sikaman",
     "siktim",
     "sikey",
-    "siki",
+    "siki"w,
     "aminga qotogim",
     "popish",
     "xuyela",
@@ -37,6 +37,7 @@ BAD_WORDS = [
     "qoto",
     "qotoq",
     "yiban",
+    "skb",
     "oneni ami",
     "am",
 ]
