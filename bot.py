@@ -1,4 +1,9 @@
-from telegram import Update
+import os
+import re
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -6,85 +11,80 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-# TOKEN
-TOKEN = "BU_YERGA_TOKEN"
+TOKEN = os.getenv("TOKEN")
 
-# So'kinishlar
 BAD_WORDS = [
-    "mat",
-    "suka",
-    "blyat",
-    "fuck",
+    "jala",
+    "gandon",
+    "pidaraz",
+    "qoto",
+    "am",
 ]
 
-# START komandasi
+pattern = r"\b(" + "|".join(BAD_WORDS) + r")\b"
+
+
+# ── Keep-alive server (Render bepul plan uchun) ──────────────────────────────
+class KeepAliveHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot ishlayapti!")
+
+    def log_message(self, format, *args):
+        pass  # server loglarini o'chirish
+
+
+def run_keep_alive():
+    port = int(os.getenv("PORT", 8080))
+    server = HTTPServer(("0.0.0.0", port), KeepAliveHandler)
+    print(f"Keep-alive server port {port} da ishga tushdi")
+    server.serve_forever()
+
+
+# ── Handlers ─────────────────────────────────────────────────────────────────
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
 
     bot_username = context.bot.username
-
-    # Guruhga qo'shish linki
     add_group_url = f"https://t.me/{bot_username}?startgroup=true"
 
-    keyboard = [
-        [
-            InlineKeyboardButton(
-                "➕ Guruhga qo'shish",
-                url=add_group_url
-            )
-        ]
-    ]
-
+    keyboard = [[InlineKeyboardButton("➕ Guruhga qo'shish", url=add_group_url)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     text = (
         "⚠️ Bu botni gruppaga qo'shing va uni admin qiling.\n\n"
         "🤖 Bot vazifasi:\n"
-        "• Gruppadagi so'kingan habarlarni o'chirish\n"
-        "• So'kingan foydalanuvchiga tanbeh berish"
+        "• Gruppadagi so'kinishlarni o'chirish\n"
+        "• Tartibni saqlash"
     )
+    await update.message.reply_text(text, reply_markup=reply_markup)
 
-    await update.message.reply_text(
-        text,
-        reply_markup=reply_markup
-    )
 
-# Anti-mat
 async def anti_mat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not update.message:
+    if not update.message or not update.message.text:
         return
 
-    if not update.message.text:
-        return
+    text = update.message.text
 
-    text = update.message.text.lower()
+    if re.search(pattern, text, re.IGNORECASE):
+        try:
+            await update.message.delete()
+        except Exception:
+            pass
 
-    for word in BAD_WORDS:
 
-        if word in text:
+# ── Main ─────────────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    # Keep-alive serverni alohida thread da ishga tushirish
+    t = threading.Thread(target=run_keep_alive, daemon=True)
+    t.start()
 
-            try:
-                await update.message.delete()
-            except:
-                pass
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, anti_mat))
 
-            break
-
-# APP
-app = ApplicationBuilder().token(TOKEN).build()
-
-# Handlers
-app.add_handler(CommandHandler("start", start))
-
-app.add_handler(
-    MessageHandler(
-        filters.TEXT & ~filters.COMMAND,
-        anti_mat
-    )
-)
-
-print("Bot ishladi!")
-
-app.run_polling()
+    print("Bot ishga tushdi!")
+    app.run_polling(drop_pending_updates=True)
