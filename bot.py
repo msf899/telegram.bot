@@ -29,6 +29,8 @@ BAD_WORDS = [
     "popish",
     "xuyela",
     "pidr",
+    "dinnaxuy",
+    "pawol naxxuy",
     "gandon",
     "pidaraz",
     "qoto",
