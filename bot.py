@@ -34,6 +34,7 @@ BAD_WORDS = [
     "gandon",
     "pidaraz",
     "qoto",
+    "pidoras",
     "qotoq",
     "yiban",
     "oneni ami",
