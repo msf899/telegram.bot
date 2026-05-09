@@ -8,6 +8,7 @@ from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     MessageHandler,
+    ChatMemberHandler,
     ContextTypes,
     filters,
 )
@@ -25,7 +26,7 @@ BAD_WORDS = [
 pattern = r"\b(" + "|".join(BAD_WORDS) + r")\b"
 
 
-# ── Keep-alive server (Render bepul plan uchun) ──────────────────────────────
+# ── Keep-alive server ────────────────────────────────────────────────────────
 class KeepAliveHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -33,7 +34,7 @@ class KeepAliveHandler(BaseHTTPRequestHandler):
         self.wfile.write(b"Bot ishlayapti!")
 
     def log_message(self, format, *args):
-        pass  # server loglarini o'chirish
+        pass
 
 
 def run_keep_alive():
@@ -43,9 +44,12 @@ def run_keep_alive():
     server.serve_forever()
 
 
-# ── Handlers ─────────────────────────────────────────────────────────────────
+# ── /start — faqat private chatda ───────────────────────────────────────────
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
+        return
+
+    if update.message.chat.type in ["group", "supergroup"]:
         return
 
     bot_username = context.bot.username
@@ -63,6 +67,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, reply_markup=reply_markup)
 
 
+# ── Bot guruhga qo'shilganda salom ──────────────────────────────────────────
+async def bot_added_to_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    result = update.my_chat_member
+    if not result:
+        return
+
+    old_status = result.old_chat_member.status
+    new_status = result.new_chat_member.status
+
+    # Bot guruhga qo'shildi
+    if old_status in ["left", "kicked"] and new_status in ["member", "administrator"]:
+        await result.chat.send_message(
+            "👋 Salom! Men so'kinishlarni nazorat qiluvchi botman.\n\n"
+            "⚠️ Meni admin qiling va 'Delete messages' ruxsatini bering.\n"
+            "🚫 Guruhda so'kingan foydalanuvchilar ogohlantiriladi!"
+        )
+
+
+# ── So'kinish filtri ─────────────────────────────────────────────────────────
 async def anti_mat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
@@ -70,20 +93,33 @@ async def anti_mat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     if re.search(pattern, text, re.IGNORECASE):
+        user = update.message.from_user
+        if user.username:
+            name = f"@{user.username}"
+        else:
+            name = user.first_name or "Foydalanuvchi"
+
         try:
             await update.message.delete()
+        except Exception:
+            pass
+
+        try:
+            await update.message.chat.send_message(
+                f"⚠️ {name}, iltimos so'kinmang! Guruh qoidalariga rioya qiling. 🙏"
+            )
         except Exception:
             pass
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    # Keep-alive serverni alohida thread da ishga tushirish
     t = threading.Thread(target=run_keep_alive, daemon=True)
     t.start()
 
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(ChatMemberHandler(bot_added_to_group, ChatMemberHandler.MY_CHAT_MEMBER))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, anti_mat))
 
     print("Bot ishga tushdi!")
