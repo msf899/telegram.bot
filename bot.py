@@ -140,7 +140,7 @@ async def anti_mat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             warning = await update.message.chat.send_message(
                 f"⚠️ {name}, iltimos so'kinmang! Guruh qoidalariga rioya qiling. 🙏"
             )
-            context.application.create_task(delete_after(warning, 10 * 60))
+            context.application.create_task(delete_after(warning, 5 * 60))
         except Exception:
             pass
 
