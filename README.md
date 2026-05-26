@@ -1,2 +1,2 @@
 # telegram.bot
-sokma
+Telegram group swear word removal service
