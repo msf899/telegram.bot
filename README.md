@@ -1,2 +1,2 @@
 # telegram.bot
-Telegram group swear word removal service
+Telegram group uzbek swear word removal service
