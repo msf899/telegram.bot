@@ -54,7 +54,7 @@ pattern = re.compile(
 )
 
 
-# ── Keep-alive server ────────────────────────────────────────────────────────
+
 class KeepAliveHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -72,7 +72,7 @@ def run_keep_alive():
     server.serve_forever()
 
 
-# ── Xabarni N sekunddan keyin o'chirish ─────────────────────────────────────
+
 async def delete_after(message, seconds: int):
     await asyncio.sleep(seconds)
     try:
@@ -81,7 +81,7 @@ async def delete_after(message, seconds: int):
         pass
 
 
-# ── /start — faqat private chatda ───────────────────────────────────────────
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
@@ -104,7 +104,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, reply_markup=reply_markup)
 
 
-# ── Bot guruhga qo'shilganda salom ──────────────────────────────────────────
 async def bot_added_to_group(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = update.my_chat_member
     if not result:
@@ -121,7 +120,6 @@ async def bot_added_to_group(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
 
 
-# ── So'kinish filtri ─────────────────────────────────────────────────────────
 async def anti_mat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
@@ -146,7 +144,7 @@ async def anti_mat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+
 if __name__ == "__main__":
     t = threading.Thread(target=run_keep_alive, daemon=True)
     t.start()
